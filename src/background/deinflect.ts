@@ -37,6 +37,7 @@ export const enum Reason {
   SuruNoun,
   ZaruWoEnai,
   NegativeTe,
+  Irregular,
 }
 
 export const deinflectL10NKeys: { [key: number]: string } = {
@@ -76,6 +77,7 @@ export const deinflectL10NKeys: { [key: number]: string } = {
   [Reason.SuruNoun]: 'deinflect_suru_noun',
   [Reason.ZaruWoEnai]: 'deinflect_zaru_wo_enai',
   [Reason.NegativeTe]: 'deinflect_negative_te',
+  [Reason.Irregular]: 'deinflect_irregular',
 };
 
 const enum Type {
@@ -85,15 +87,22 @@ const enum Type {
   IAdj = 1 << 2,
   KuruVerb = 1 << 3,
   SuruVerb = 1 << 4,
-  NounVS = 1 << 5,
-  All = IchidanVerb | GodanVerb | IAdj | KuruVerb | SuruVerb | NounVS,
+  SpecialSuruVerb = 1 << 5,
+  NounVS = 1 << 6,
+  All = IchidanVerb |
+    GodanVerb |
+    IAdj |
+    KuruVerb |
+    SuruVerb |
+    SpecialSuruVerb |
+    NounVS,
   // Intermediate types
-  Initial = 1 << 6, // original word before any deinflection (from-type only)
-  VNai = 1 << 7,
-  TaTeStem = 1 << 8,
-  DaDeStem = 1 << 9,
-  MasuStem = 1 << 10,
-  IrrealisStem = 1 << 11,
+  Initial = 1 << 7, // original word before any deinflection (from-type only)
+  VNai = 1 << 8,
+  TaTeStem = 1 << 9,
+  DaDeStem = 1 << 10,
+  MasuStem = 1 << 11,
+  IrrealisStem = 1 << 12,
 }
 
 export { Type as WordType };
@@ -169,6 +178,9 @@ const deinflectRuleData: Array<
   ['こられる', 'くる', Type.IchidanVerb, Type.KuruVerb, [Reason.PotentialOrPassive]],
   ['ざるえぬ', 'ない', Type.IAdj, Type.VNai, [Reason.ZaruWoEnai]],
   ['ざる得ぬ', 'ない', Type.IAdj, Type.VNai, [Reason.ZaruWoEnai]],
+  ['せさせる', 'する', Type.IchidanVerb, Type.SpecialSuruVerb, [Reason.Irregular, Reason.Causative]],
+  ['せされる', 'する', Type.IchidanVerb, Type.SpecialSuruVerb, [Reason.Irregular, Reason.CausativePassive]],
+  ['せられる', 'する', Type.IchidanVerb, Type.SpecialSuruVerb, [Reason.Irregular, Reason.Passive]],
   ['のたまう', 'のたまう', Type.TaTeStem, Type.GodanVerb, []],
   ['のたもう', 'のたもう', Type.TaTeStem, Type.GodanVerb, []],
   ['ましたら', '', Type.Initial, Type.MasuStem, [Reason.Polite, Reason.Tara]],
@@ -191,6 +203,7 @@ const deinflectRuleData: Array<
   ['御座い', '御座る', Type.MasuStem, Type.GodanVerb, [Reason.MasuStem]],
   ['させる', 'る', Type.IchidanVerb, Type.IchidanVerb | Type.KuruVerb, [Reason.Causative]],
   ['させる', 'する', Type.IchidanVerb, Type.SuruVerb, [Reason.Causative]],
+  ['さない', 'する', Type.IAdj | Type.VNai, Type.SpecialSuruVerb, [Reason.Irregular, Reason.Negative]],
   ['される', '', Type.IchidanVerb, Type.IrrealisStem, [Reason.CausativePassive]],
   ['される', 'する', Type.IchidanVerb, Type.SuruVerb, [Reason.Passive]],
   ['しない', 'する', Type.IAdj | Type.VNai, Type.SuruVerb, [Reason.Negative]],
@@ -234,24 +247,23 @@ const deinflectRuleData: Array<
   ['こい', 'くる', Type.Initial, Type.KuruVerb, [Reason.Imperative]],
   ['こう', 'く', Type.Initial, Type.GodanVerb, [Reason.Volitional]],
   ['ごう', 'ぐ', Type.Initial, Type.GodanVerb, [Reason.Volitional]],
-  ['しろ', 'す', Type.Initial, Type.SuruVerb, [Reason.Imperative]],
   ['しろ', 'する', Type.Initial, Type.SuruVerb, [Reason.Imperative]],
+  ['さず', 'する', Type.Initial, Type.SpecialSuruVerb, [Reason.Irregular, Reason.Zu]],
+  ['さぬ', 'する', Type.Initial, Type.SpecialSuruVerb, [Reason.Irregular, Reason.Negative]],
   ['する', '', Type.SuruVerb, Type.MasuStem, [Reason.Humble]],
   ['する', '', Type.SuruVerb, Type.NounVS, [Reason.SuruNoun]],
   ['せず', 'する', Type.Initial, Type.SuruVerb, [Reason.Zu]],
   ['せぬ', 'する', Type.Initial, Type.SuruVerb, [Reason.Negative]],
   ['せん', 'する', Type.Initial, Type.SuruVerb, [Reason.Negative]],
-  ['せず', 'す', Type.Initial, Type.SuruVerb, [Reason.Zu]],
-  ['せぬ', 'す', Type.Initial, Type.SuruVerb, [Reason.Negative]],
-  ['せん', 'す', Type.Initial, Type.SuruVerb, [Reason.Negative]],
-  ['せば', 'す', Type.Initial, Type.GodanVerb | Type.SuruVerb, [Reason.Ba]],
+  ['せば', 'す', Type.Initial, Type.GodanVerb, [Reason.Ba]],
+  ['せば', 'する', Type.Initial, Type.SpecialSuruVerb, [Reason.Irregular, Reason.Ba]],
   ['せよ', 'する', Type.Initial, Type.SuruVerb, [Reason.Imperative]],
-  ['せよ', 'す', Type.Initial, Type.SuruVerb, [Reason.Imperative]],
   ['せる', 'す', Type.IchidanVerb, Type.GodanVerb, [Reason.Potential]],
   ['せる', '', Type.IchidanVerb, Type.IrrealisStem, [Reason.Causative]],
   ['そう', '', Type.Initial, Type.MasuStem, [Reason.Sou]],
   ['そう', 'い', Type.Initial, Type.IAdj, [Reason.Sou]],
   ['そう', 'す', Type.Initial, Type.GodanVerb, [Reason.Volitional]],
+  ['そう', 'する', Type.Initial, Type.SpecialSuruVerb, [Reason.Irregular, Reason.Volitional]],
   ['たい', '', Type.IAdj, Type.MasuStem, [Reason.Tai]],
   ['たら', '', Type.Initial, Type.TaTeStem, [Reason.Tara]],
   ['だら', '', Type.Initial, Type.DaDeStem, [Reason.Tara]],
@@ -326,10 +338,11 @@ const deinflectRuleData: Array<
   ['さ', 'す', Type.IrrealisStem, Type.GodanVerb, []],
   ['し', 'す', Type.MasuStem, Type.GodanVerb, [Reason.MasuStem]],
   ['し', 'する', Type.MasuStem, Type.SuruVerb, [Reason.MasuStem]],
-  ['し', 'す', Type.TaTeStem, Type.GodanVerb | Type.SuruVerb, []],
+  ['し', 'す', Type.TaTeStem, Type.GodanVerb, []],
   ['し', 'する', Type.TaTeStem, Type.SuruVerb, []],
   ['ず', '', Type.Initial, Type.IrrealisStem, [Reason.Zu]],
   ['せ', 'す', Type.Initial, Type.GodanVerb, [Reason.Imperative]],
+  ['せ', 'する', Type.Initial, Type.SpecialSuruVerb, [Reason.Irregular, Reason.Imperative]],
   ['た', 'つ', Type.IrrealisStem, Type.GodanVerb, []],
   ['た', '', Type.Initial, Type.TaTeStem, [Reason.Past]],
   ['だ', '', Type.Initial, Type.DaDeStem, [Reason.Past]],

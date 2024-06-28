@@ -109,14 +109,49 @@ describe('deinflect', () => {
     });
   });
 
-  it('deinflects vs-c', () => {
-    const result = deinflect('兼した');
-    const match = result.find((candidate) => candidate.word === '兼す');
-    expect(match).toEqual({
-      reasonChains: [[Reason.Past]],
-      type: 18,
-      word: '兼す',
-    });
+  it('deinflects all forms of する', () => {
+    const cases = [
+      ['しない', [Reason.Negative]],
+      ['せぬ', [Reason.Negative]],
+      ['せん', [Reason.Negative]],
+      ['せず', [Reason.Zu]],
+      ['される', [Reason.Passive]],
+      ['させる', [Reason.Causative]],
+      ['しろ', [Reason.Imperative]],
+      ['せよ', [Reason.Imperative]],
+      ['すれば', [Reason.Ba]],
+      ['できる', [Reason.Potential]],
+    ];
+
+    for (const [inflected, reasons] of cases) {
+      const result = deinflect(inflected as string);
+      const match = result.find((candidate) => candidate.word == 'する');
+      expect(match).toBeDefined();
+      expect(match!.reasonChains).toEqual([reasons]);
+    }
+  });
+
+  it('deinflects additional forms of special class suru-verbs', () => {
+    const cases = [
+      ['発せさせる', [Reason.Irregular, Reason.Causative]],
+      ['発せされる', [Reason.Irregular, Reason.CausativePassive]],
+      ['発せられる', [Reason.Irregular, Reason.Passive]],
+      // 五段化
+      ['発さない', [Reason.Irregular, Reason.Negative]],
+      ['発さぬ', [Reason.Irregular, Reason.Negative]],
+      ['発さず', [Reason.Irregular, Reason.Zu]],
+      ['発そう', [Reason.Irregular, Reason.Volitional]],
+      ['発せば', [Reason.Irregular, Reason.Ba]],
+      ['発せ', [Reason.Irregular, Reason.Imperative]],
+    ];
+
+    for (const [inflected, reasons] of cases) {
+      const result = deinflect(inflected as string);
+      const match = result.find((candidate) => candidate.word == '発する');
+      expect(match).toBeDefined();
+      expect(match!.type).toEqual(WordType.SpecialSuruVerb);
+      expect(match!.reasonChains).toEqual([reasons]);
+    }
   });
 
   it('deinflects irregular forms of 行く', () => {
@@ -285,8 +320,8 @@ describe('deinflect', () => {
       ['歩いてる', '歩く', 2, undefined],
       ['泳いでいる', '泳ぐ', 2, undefined],
       ['泳いでる', '泳ぐ', 2, undefined],
-      ['話している', '話す', 18, undefined],
-      ['話してる', '話す', 18, undefined],
+      ['話している', '話す', 2, undefined],
+      ['話してる', '話す', 2, undefined],
       ['死んでいる', '死ぬ', 2, undefined],
       ['死んでる', '死ぬ', 2, undefined],
       ['飼っている', '飼う', 2, undefined],
